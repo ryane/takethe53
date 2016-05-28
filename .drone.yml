@@ -3,6 +3,6 @@ pipeline:
     image: golang:1.6
     commands:
       - export GOPATH=/drone
-      - go get github.com/Masterminds/glide
+      - go install github.com/Masterminds/glide
       - glide install
       - go test
