@@ -4,4 +4,4 @@ pipeline:
     commands:
       - go get github.com/Masterminds/glide
       - glide install
-      - "go test $(glide nv)"
+      - go test
