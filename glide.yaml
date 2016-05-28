@@ -1,2 +1,5 @@
 package: github.com/ryane/takethe53
-import: []
+import:
+- package: github.com/spf13/cobra
+  subpackages:
+  - cobra
