@@ -5,5 +5,5 @@ pipeline:
       - export GOPATH=/drone
       - go get -d github.com/Masterminds/glide
       - go install github.com/Masterminds/glide
-      - glide install
+      - /drone/bin/glide install
       - go test
