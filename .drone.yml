@@ -1,9 +1,11 @@
+workspace:
+  base: /go
 pipeline:
   build:
     image: golang:1.6
     commands:
-      - export GOPATH=/drone
-      - go get -d github.com/Masterminds/glide
-      - go install github.com/Masterminds/glide
+      # - export GOPATH=/drone
+      - go get github.com/Masterminds/glide
+      # - go install github.com/Masterminds/glide
       - /drone/bin/glide install
       - go test `/drone/bin/glide nv`
