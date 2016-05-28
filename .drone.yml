@@ -5,6 +5,8 @@ pipeline:
       - pwd
       - printenv
       - go env
-      - go get github.com/Masterminds/glide
-      - glide install
+      # - go get github.com/Masterminds/glide
+      # - glide install
+      - go get
+      - go build
       - go test
