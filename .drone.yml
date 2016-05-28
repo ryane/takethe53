@@ -4,7 +4,7 @@ pipeline:
     commands:
       - pwd
       - printenv
-      = go env
+      - go env
       - go get github.com/Masterminds/glide
       - glide install
       - go test
