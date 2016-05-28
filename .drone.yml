@@ -6,4 +6,4 @@ pipeline:
       - go get -d github.com/Masterminds/glide
       - go install github.com/Masterminds/glide
       - /drone/bin/glide install
-      - go test
+      - go test $(/drone/bin/glide nv)
