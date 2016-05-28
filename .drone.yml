@@ -7,6 +7,8 @@ pipeline:
       - go env
       # - go get github.com/Masterminds/glide
       # - glide install
+      - export GOPATH=/drone
+      - go env
       - go get
       - go build
       - go test
