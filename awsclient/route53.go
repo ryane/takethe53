@@ -3,20 +3,29 @@ package awsclient
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/route53"
 )
 
 var (
 	ErrZoneNotFound   = errors.New("Zone does not exist.")
 	ErrRecordNotFound = errors.New("Record does not exist.")
+	ErrChangeNotFound = errors.New("Change does not exist.")
+)
+
+const (
+	ChangeStatusPending = "PENDING"
+	ChangeStatusInSync  = "INSYNC"
 )
 
 type Route53er interface {
 	ListHostedZonesPages(*route53.ListHostedZonesInput, func(*route53.ListHostedZonesOutput, bool) bool) error
 	ChangeResourceRecordSets(input *route53.ChangeResourceRecordSetsInput) (*route53.ChangeResourceRecordSetsOutput, error)
 	ListResourceRecordSetsPages(*route53.ListResourceRecordSetsInput, func(*route53.ListResourceRecordSetsOutput, bool) bool) error
+	GetChange(*route53.GetChangeInput) (*route53.GetChangeOutput, error)
 }
 
 type Zone struct {
@@ -29,6 +38,13 @@ type Record struct {
 	DNSName              string
 	HostedZoneID         string
 	EvaluateTargetHealth bool
+}
+
+type ChangeStatus struct {
+	ID          string
+	Status      string
+	SubmittedAt time.Time
+	Comment     string
 }
 
 func (c *AWSClient) Zones() ([]*Zone, error) {
@@ -46,7 +62,7 @@ func (c *AWSClient) Zones() ([]*Zone, error) {
 	})
 
 	if err != nil {
-		return nil, checkError(err)
+		return nil, checkAWSError(err)
 	}
 
 	return zones, nil
@@ -97,7 +113,7 @@ func (c *AWSClient) FindRecord(zone *Zone, alias string) (*Record, error) {
 	})
 
 	if err != nil {
-		return nil, checkError(err)
+		return nil, checkAWSError(err)
 	}
 
 	if rec == nil {
@@ -107,7 +123,7 @@ func (c *AWSClient) FindRecord(zone *Zone, alias string) (*Record, error) {
 	return rec, nil
 }
 
-func (c *AWSClient) SetAlias(zone *Zone, hzid, elbDnsName, alias string) (*route53.ChangeInfo, error) {
+func (c *AWSClient) SetAlias(zone *Zone, hzid, elbDnsName, alias string) (*ChangeStatus, error) {
 	aliasDnsName := aliasDnsName(alias, zone)
 	params := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(zone.ID),
@@ -130,13 +146,13 @@ func (c *AWSClient) SetAlias(zone *Zone, hzid, elbDnsName, alias string) (*route
 	}
 	out, err := c.r53.ChangeResourceRecordSets(params)
 	if err != nil {
-		return nil, err
+		return nil, checkAWSError(err)
 	}
 
-	return out.ChangeInfo, nil
+	return changeInfoToChangeStatus(out.ChangeInfo), nil
 }
 
-func (c *AWSClient) RemoveAlias(zone *Zone, alias string) (*route53.ChangeInfo, error) {
+func (c *AWSClient) RemoveAlias(zone *Zone, alias string) (*ChangeStatus, error) {
 	rec, err := c.FindRecord(zone, alias)
 	if err != nil {
 		return nil, err
@@ -163,10 +179,27 @@ func (c *AWSClient) RemoveAlias(zone *Zone, alias string) (*route53.ChangeInfo, 
 	}
 	out, err := c.r53.ChangeResourceRecordSets(params)
 	if err != nil {
-		return nil, err
+		return nil, checkAWSError(err)
 	}
 
-	return out.ChangeInfo, nil
+	return changeInfoToChangeStatus(out.ChangeInfo), nil
+}
+
+func (c *AWSClient) GetChangeStatus(id string) (*ChangeStatus, error) {
+	params := &route53.GetChangeInput{
+		Id: aws.String(id),
+	}
+
+	output, err := c.r53.GetChange(params)
+	if err != nil {
+		if awserr, ok := err.(awserr.Error); ok && awserr.Code() == "NoSuchChange" {
+			return nil, ErrChangeNotFound
+		} else {
+			return nil, checkAWSError(err)
+		}
+	}
+
+	return changeInfoToChangeStatus(output.ChangeInfo), nil
 }
 
 func aliasDnsName(alias string, zone *Zone) string {
@@ -181,4 +214,13 @@ func aliasDnsName(alias string, zone *Zone) string {
 	}
 
 	return aliasDnsName
+}
+
+func changeInfoToChangeStatus(ci *route53.ChangeInfo) *ChangeStatus {
+	return &ChangeStatus{
+		ID:          aws.StringValue(ci.Id),
+		Status:      aws.StringValue(ci.Status),
+		SubmittedAt: aws.TimeValue(ci.SubmittedAt),
+		Comment:     aws.StringValue(ci.Comment),
+	}
 }

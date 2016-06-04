@@ -1,8 +1,10 @@
 # 0.1
 
-- [ ] add travis tests
+- [x] add travis tests
 
-- [ ] better return value for SetAlias, RemoveAlias
+- [x] travis badge
+
+- [x] better return value for SetAlias, RemoveAlias
 
 - [ ] wait for InSync
 

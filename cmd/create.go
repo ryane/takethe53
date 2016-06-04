@@ -66,7 +66,8 @@ var createCmd = &cobra.Command{
 			logger(createFields()).Fatal("Error setting alias: ", err)
 		}
 
-		fmt.Printf("change status: %s\n", change.Status)
+		fmt.Print("Pending...  ")
+		waitForChangeSync(client, change, 60, createFields())
 	},
 }
 

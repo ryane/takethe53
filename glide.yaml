@@ -6,3 +6,5 @@ import:
 - package: github.com/Sirupsen/logrus
 - package: github.com/aws/aws-sdk-go
 - package: github.com/stretchr/testify
+- package: github.com/briandowns/spinner
+- package: github.com/fatih/color

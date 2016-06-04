@@ -2,9 +2,10 @@ package awsclient
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"strings"
 )
 
 type ELBer interface {
@@ -33,7 +34,7 @@ func (c *AWSClient) LoadBalancers() ([]*LoadBalancer, error) {
 	})
 
 	if err != nil {
-		return nil, checkError(err)
+		return nil, checkAWSError(err)
 	}
 
 	return lbs, nil

@@ -2,8 +2,10 @@ package awsclient
 
 import (
 	"errors"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -43,13 +45,18 @@ func New() *AWSClient {
 	return &AWSClient{r53: r53er, elb: elber}
 }
 
-func checkError(err error) error {
-	if err == credentials.ErrNoValidProvidersFoundInChain {
-		logrus.WithFields(logrus.Fields{
-			"type":  "route53",
-			"error": err,
-		}).Debug("error.route53")
+func checkAWSError(err error) error {
+	awserr := err.(awserr.Error)
+	logrus.WithFields(logrus.Fields{
+		"type":  "aws",
+		"error": awserr,
+		"code":  awserr.Code(),
+	}).Debug("error.aws")
+
+	switch awserr {
+	case credentials.ErrNoValidProvidersFoundInChain:
 		return ErrInvalidAWSCredentials
 	}
+
 	return err
 }

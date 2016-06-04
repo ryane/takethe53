@@ -57,7 +57,8 @@ var removeCmd = &cobra.Command{
 			logger(removeFields()).Fatal("Error removing alias: ", err)
 		}
 
-		fmt.Printf("change status: %s\n", change.Status)
+		fmt.Print("Pending...  ")
+		waitForChangeSync(client, change, 60, removeFields())
 	},
 }
 

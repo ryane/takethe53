@@ -6,6 +6,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/stretchr/testify/assert"
@@ -95,6 +96,11 @@ func (m *mockRoute53) ListResourceRecordSetsPages(params *route53.ListResourceRe
 	return args.Error(0)
 }
 
+func (m *mockRoute53) GetChange(input *route53.GetChangeInput) (*route53.GetChangeOutput, error) {
+	args := m.Called(input)
+	return args.Get(0).(*route53.GetChangeOutput), args.Error(1)
+}
+
 func TestZones(t *testing.T) {
 	c := New()
 	r53 := &mockRoute53{}
@@ -173,6 +179,22 @@ func TestFindRecord(t *testing.T) {
 	}
 }
 
+func TestFindRecordNoExist(t *testing.T) {
+	c := New()
+	r53 := &mockRoute53{}
+	c.r53 = r53
+	mockListResourceRecordSets(r53, nil)
+
+	zone := &Zone{
+		ID:   "/hostedzone/ZID12341",
+		Name: "example1.com.",
+	}
+
+	rec, err := c.FindRecord(zone, "nonexistent")
+	assert.Nil(t, rec)
+	assert.Equal(t, ErrRecordNotFound, err)
+}
+
 func TestSetAlias(t *testing.T) {
 	c := New()
 	r53 := &mockRoute53{}
@@ -196,9 +218,10 @@ func TestSetAlias(t *testing.T) {
 	// handle different alias formats
 	aliases := []string{"test.example2.com.", "test", "test.example2.com"}
 	for _, alias := range aliases {
-		change, err := c.SetAlias(zone, "Z3DZX7HGU9N41H", "aerfflakjdfljadlkfjal-77828384.us-east-1.elb.amazonaws.com", alias)
+		status, err := c.SetAlias(zone, "Z3DZX7HGU9N41H", "aerfflakjdfljadlkfjal-77828384.us-east-1.elb.amazonaws.com", alias)
 		assert.Nil(t, err, "error should be nil")
-		assert.Equal(t, route53.ChangeStatusPending, aws.StringValue(change.Status), "status should be pending")
+		assert.Equal(t, "11111", status.ID)
+		assert.Equal(t, ChangeStatusPending, status.Status, "status should be pending")
 	}
 }
 
@@ -226,10 +249,51 @@ func TestRemoveAlias(t *testing.T) {
 	// handle different alias formats
 	aliases := []string{"test2.example1.com.", "test2", "test2.example1.com"}
 	for _, alias := range aliases {
-		change, err := c.RemoveAlias(zone, alias)
+		status, err := c.RemoveAlias(zone, alias)
 		assert.Nil(t, err, "error should be nil")
-		assert.Equal(t, route53.ChangeStatusPending, aws.StringValue(change.Status), "status should be pending")
+		assert.Equal(t, "11111", status.ID)
+		assert.Equal(t, ChangeStatusPending, status.Status, "status should be pending")
 	}
+}
+
+func TestGetChangeStatus(t *testing.T) {
+	c := New()
+	r53 := &mockRoute53{}
+	c.r53 = r53
+
+	id := "11111"
+	out := &route53.GetChangeOutput{
+		ChangeInfo: &route53.ChangeInfo{
+			Id:          aws.String(id),
+			Status:      aws.String(route53.ChangeStatusPending),
+			SubmittedAt: aws.Time(time.Now()),
+		},
+	}
+
+	r53.Mock.On("GetChange", mock.AnythingOfType("*route53.GetChangeInput")).Return(out, nil)
+
+	status, err := c.GetChangeStatus(id)
+	assert.Nil(t, err, "error should be nil")
+	assert.Equal(t, id, status.ID)
+	assert.Equal(t, ChangeStatusPending, status.Status)
+}
+
+func TestGetChangeStatusNoExist(t *testing.T) {
+	c := New()
+	r53 := &mockRoute53{}
+	c.r53 = r53
+
+	id := "11111"
+	r53.Mock.On(
+		"GetChange", mock.AnythingOfType("*route53.GetChangeInput"),
+	).Return(
+		&route53.GetChangeOutput{},
+		awserr.New("NoSuchChange", "Could not find resource with ID: 11111", nil),
+	)
+
+	status, err := c.GetChangeStatus(id)
+	assert.Equal(t, ErrChangeNotFound, err)
+	assert.Nil(t, status, "status should be nil")
 }
 
 func mockListHostedZones(m *mockRoute53, returnParams ...interface{}) {
