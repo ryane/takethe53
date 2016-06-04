@@ -1,10 +1,37 @@
-hash: a5ad0fbc1dd01852221ca5d69a9ab9af69b09fb66ae3c8080549bc4f4cc2e50f
-updated: 2016-05-28T06:20:19.493924795-04:00
+hash: f02798a315243ad39c63cba4ddb7aec25bc1f7e7197e9721f7be7639523daf60
+updated: 2016-05-31T21:53:49.458923801-04:00
 imports:
+- name: github.com/aws/aws-sdk-go
+  version: 665c623d7f3e0ee276596b006655ba4dbe0565b0
+  subpackages:
+  - aws
+  - aws/credentials
+  - aws/request
+  - aws/session
+  - service/route53
+  - aws/awserr
+  - aws/awsutil
+  - aws/client/metadata
+  - aws/client
+  - aws/corehandlers
+  - aws/defaults
+  - private/endpoints
+  - private/protocol/restxml
+  - private/signer/v4
+  - private/waiter
+  - aws/credentials/ec2rolecreds
+  - aws/ec2metadata
+  - private/protocol/query
+  - private/protocol/rest
+  - private/protocol/xml/xmlutil
+  - private/protocol/query/queryutil
+  - private/protocol
 - name: github.com/BurntSushi/toml
   version: f0aeabca5a127c4078abb8c8d64298b147264b55
 - name: github.com/fsnotify/fsnotify
   version: 30411dbcefb7a1da7e84f75530ad3abe4011b4f8
+- name: github.com/go-ini/ini
+  version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
 - name: github.com/hashicorp/hcl
   version: 9a905a34e6280ce905da1a32344b25e81011197a
   subpackages:
@@ -18,6 +45,8 @@ imports:
   - json/token
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/jmespath/go-jmespath
+  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/magiconair/properties
   version: c265cfa48dda6474e208715ca93e987829f572f8
 - name: github.com/mitchellh/mapstructure
@@ -36,6 +65,8 @@ imports:
   version: cb88ea77998c3f024757528e3305022ab50b43be
 - name: github.com/spf13/viper
   version: d8a428b8a30606e1d0b355d91edf282609ade1a6
+- name: github.com/stretchr/testify
+  version: 8d64eb7173c7753d6419fd4a9caf057398611364
 - name: golang.org/x/sys
   version: d4feaf1a7e61e1d9e79e6c4e76c6349e9cab0a03
   subpackages:

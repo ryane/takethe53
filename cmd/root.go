@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/ryane/takethe53/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -36,7 +36,7 @@ var RootCmd = &cobra.Command{
 
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		logrus.Error(err)
 		os.Exit(-1)
 	}
 }
@@ -44,6 +44,13 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.takethe53.yaml)")
+
+	RootCmd.PersistentFlags().BoolP("verbose", "v", false, "enable verbose logging")
+	viper.BindPFlag("verbose", RootCmd.PersistentFlags().Lookup("verbose"))
+
+	RootCmd.PersistentFlags().StringP("log-format", "f", "text", "log format. text|json")
+	viper.BindPFlag("log-format", RootCmd.PersistentFlags().Lookup("log-format"))
+
 	RootCmd.Flags().String("address", ":9053", "the address to listen on")
 	viper.BindPFlag("address", RootCmd.Flags().Lookup("address"))
 }
@@ -60,7 +67,25 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
+	readConfig := false
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		readConfig = len(viper.ConfigFileUsed()) > 0
 	}
+
+	if viper.GetString("log-format") == "json" {
+		logrus.SetFormatter(&logrus.JSONFormatter{})
+	}
+
+	if viper.GetBool("verbose") {
+		logrus.SetLevel(logrus.DebugLevel)
+		logrus.Debug("debug on")
+	}
+
+	if readConfig {
+		logrus.Debug("Using config file:", viper.ConfigFileUsed())
+	}
+}
+
+func logger(fields logrus.Fields) *logrus.Entry {
+	return logrus.WithFields(fields)
 }

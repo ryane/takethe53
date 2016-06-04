@@ -4,3 +4,5 @@ import:
   subpackages:
   - cobra
 - package: github.com/Sirupsen/logrus
+- package: github.com/aws/aws-sdk-go
+- package: github.com/stretchr/testify
