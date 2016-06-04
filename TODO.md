@@ -6,9 +6,7 @@
 
 - [x] better return value for SetAlias, RemoveAlias
 
-- [ ] wait for InSync
-
-- [ ] rename SetAlias to SetAliasForELB (or something along those lines)
+- [x] wait for InSync
 
 - [ ] rename create command (alias?, elb alias?)
 
